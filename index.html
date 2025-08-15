@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToneTrade - Global Music Marketplace</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <style>
+        .audio-wave {
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .music-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .waveform {
+            height: 60px;
+            background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+        .waveform::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent 0px,
+                transparent 2px,
+                rgba(255,255,255,0.3) 2px,
+                rgba(255,255,255,0.3) 4px
+            );
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <i class="fas fa-music text-2xl mr-3"></i>
+                    <h1 class="text-2xl font-bold">ToneTrade</h1>
+                    <span class="ml-2 text-sm bg-white bg-opacity-20 px-2 py-1 rounded-full">Global</span>
+                </div>
+                <div class="hidden md:flex space-x-6">
+                    <button onclick="showSection('marketplace')" class="hover:text-blue-200 transition-colors">
+                        <i class="fas fa-store mr-2"></i>Marketplace
+                    </button>
+                    <button onclick="showSection('creator-dashboard')" class="hover:text-blue-200 transition-colors">
+                        <i class="fas fa-upload mr-2"></i>Creator Hub
+                    </button>
+                    <button onclick="showSection('community')" class="hover:text-blue-200 transition-colors">
+                        <i class="fas fa-users mr-2"></i>Community
+                    </button>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button onclick="toggleCart()" class="relative hover:text-blue-200 transition-colors">
+                            <i class="fas fa-shopping-cart text-xl"></i>
+                            <span id="cartCount" class="absolute -top-2 -right-2 bg-red-500 text-xs rounded-full px-2 py-1">0</span>
+                        </button>
+                    </div>
+                    <button onclick="toggleUserMenu()" class="flex items-center space-x-2 hover:text-blue-200 transition-colors">
+                        <i class="fas fa-user-circle text-xl"></i>
+                        <span id="userDisplay">Guest</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- User Menu Dropdown -->
+    <div id="userMenu" class="hidden absolute right-6 top-16 bg-white rounded-lg shadow-xl z-50 min-w-48">
+        <div class="py-2">
+            <button onclick="showLoginModal()" class="block px-4 py-2 text-gray-800 hover:bg-gray-100 w-full text-left">
+                <i class="fas fa-sign-in-alt mr-2"></i>Login
+            </button>
+            <button onclick="showRegisterModal()" class="block px-4 py-2 text-gray-800 hover:bg-gray-100 w-full text-left">
+                <i class="fas fa-user-plus mr-2"></i>Register
+            </button>
+            <hr class="my-2">
+            <button onclick="logout()" class="block px-4 py-2 text-red-600 hover:bg-gray-100 w-full text-left">
+                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+            </button>
+        </div>
+    </div>
+
+    <!-- Shopping Cart Sidebar -->
+    <div id="cartSidebar" class="fixed right-0 top-0 h-full w-96 bg-white shadow-2xl transform translate-x-full transition-transform duration-300 z-50">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Shopping Cart</h3>
+                <button onclick="toggleCart()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="cartItems" class="space-y-4 mb-6">
+                <!-- Cart items will be populated here -->
+            </div>
+            <div class="border-t pt-4">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="font-bold">Total: $<span id="cartTotal">0.00</span></span>
+                </div>
+                <button onclick="checkout()" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors">
+                    <i class="fas fa-credit-card mr-2"></i>Checkout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+        <!-- Hero Section -->
+        <section id="hero" class="text-center mb-12">
+            <div class="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-3xl p-12 mb-8">
+                <h2 class="text-5xl font-bold mb-4">Connect Through Music</h2>
+                <p class="text-xl mb-8">Global platform where creators and music lovers unite</p>
+                <div class="flex justify-center space-x-4">
+                    <button onclick="showSection('marketplace')" class="bg-white text-purple-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors">
+                        <i class="fas fa-shopping-bag mr-2"></i>Start Shopping
+                    </button>
+                    <button onclick="showSection('creator-dashboard')" class="border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-purple-600 transition-colors">
+                        <i class="fas fa-microphone mr-2"></i>Sell Your Music
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Platform Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="bg-white rounded-lg p-6 shadow-lg">
+                    <div class="text-3xl font-bold text-blue-600 mb-2">50K+</div>
+                    <div class="text-gray-600">Active Creators</div>
+                </div>
+                <div class="bg-white rounded-lg p-6 shadow-lg">
+                    <div class="text-3xl font-bold text-green-600 mb-2">2M+</div>
+                    <div class="text-gray-600">Music Tracks</div>
+                </div>
+                <div class="bg-white rounded-lg p-6 shadow-lg">
+                    <div class="text-3xl font-bold text-purple-600 mb-2">195</div>
+                    <div class="text-gray-600">Countries</div>
+                </div>
+                <div class="bg-white rounded-lg p-6 shadow-lg">
+                    <div class="text-3xl font-bold text-red-600 mb-2">5M+</div>
+                    <div class="text-gray-600">Downloads</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Marketplace Section -->
+        <section id="marketplace" class="hidden">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-800">Music Marketplace</h2>
+                <div class="flex space-x-4">
+                    <select id="categoryFilter" onchange="filterMusic()" class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option value="">All Categories</option>
+                        <option value="ringtone">Ringtones</option>
+                        <option value="notification">Notifications</option>
+                        <option value="alarm">Alarms</option>
+                        <option value="ambient">Ambient</option>
+                    </select>
+                    <select id="genreFilter" onchange="filterMusic()" class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option value="">All Genres</option>
+                        <option value="electronic">Electronic</option>
+                        <option value="classical">Classical</option>
+                        <option value="pop">Pop</option>
+                        <option value="rock">Rock</option>
+                    </select>
+                    <input type="text" id="searchInput" placeholder="Search music..." onkeyup="searchMusic()" class="px-4 py-2 border border-gray-300 rounded-lg">
+                </div>
+            </div>
+
+            <div id="musicGrid" class="music-grid">
+                <!-- Music items will be populated here -->
+            </div>
+        </section>
+
+        <!-- Creator Dashboard Section -->
+        <section id="creator-dashboard" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Upload Panel -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-2xl font-bold mb-6">Upload Your Music</h3>
+                        <form id="uploadForm" class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Track Title</label>
+                                <input type="text" id="trackTitle" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                                    <select id="trackCategory" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="">Select Category</option>
+                                        <option value="ringtone">Ringtone</option>
+                                        <option value="notification">Notification</option>
+                                        <option value="alarm">Alarm</option>
+                                        <option value="ambient">Ambient</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Genre</label>
+                                    <select id="trackGenre" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="">Select Genre</option>
+                                        <option value="electronic">Electronic</option>
+                                        <option value="classical">Classical</option>
+                                        <option value="pop">Pop</option>
+                                        <option value="rock">Rock</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Price ($)</label>
+                                <input type="number" id="trackPrice" min="0.99" step="0.01" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                                <textarea id="trackDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Audio File</label>
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                                    <p class="text-gray-600 mb-2">Click to upload or drag and drop</p>
+                                    <p class="text-sm text-gray-500">MP3, WAV files up to 10MB</p>
+                                    <input type="file" id="audioFile" accept="audio/*" class="hidden">
+                                    <button type="button" onclick="document.getElementById('audioFile').click()" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                        Choose File
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold">
+                                <i class="fas fa-upload mr-2"></i>Upload Track
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Creator Stats -->
+                <div class="space-y-6">
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-xl font-bold mb-4">Your Stats</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Total Tracks</span>
+                                <span id="creatorTracks" class="font-semibold">0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Total Sales</span>
+                                <span id="creatorSales" class="font-semibold">$0.00</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Downloads</span>
+                                <span id="creatorDownloads" class="font-semibold">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-xl font-bold mb-4">Recent Activity</h3>
+                        <div id="recentActivity" class="space-y-2 text-sm text-gray-600">
+                            <p>No recent activity</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-xl font-bold mb-4">Payment Info</h3>
+                        <button class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-credit-card mr-2"></i>Setup Payments
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Creator's Uploaded Tracks -->
+            <div class="mt-12">
+                <h3 class="text-2xl font-bold mb-6">Your Uploaded Tracks</h3>
+                <div id="creatorTracks" class="music-grid">
+                    <!-- Creator's tracks will be populated here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Community Section -->
+        <section id="community" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 space-y-8">
+                    <!-- Top Creators -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-2xl font-bold mb-6">Top Creators This Month</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center space-x-4 p-4 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-lg border border-yellow-200">
+                                <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold">1</div>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold">SynthMaster</h4>
+                                    <p class="text-sm text-gray-600">Electronic Music Producer</p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-bold text-yellow-600">$2,450</div>
+                                    <div class="text-sm text-gray-500">142 sales</div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                                <div class="w-12 h-12 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold">2</div>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold">MelodyMaker</h4>
+                                    <p class="text-sm text-gray-600">Classical Composer</p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-bold">$1,890</div>
+                                    <div class="text-sm text-gray-500">98 sales</div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center space-x-4 p-4 bg-orange-50 rounded-lg">
+                                <div class="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">3</div>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold">BeatCrafter</h4>
+                                    <p class="text-sm text-gray-600">Hip-Hop Producer</p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-bold text-orange-600">$1,650</div>
+                                    <div class="text-sm text-gray-500">87 sales</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Featured Collections -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-2xl font-bold mb-6">Featured Collections</h3>
+                        <div class="space-y-4">
+                            <div class="bg-gray-100 rounded-lg p-4">
+                                <h4 class="font-semibold">Summer Vibes</h4>
+                                <p class="text-sm text-gray-600">A curated selection of upbeat tracks for sunny days.</p>
+                            </div>
+                            <div class="bg-gray-100 rounded-lg p-4">
+                                <h4 class="font-semibold">Chill Lounge</h4>
+                                <p class="text-sm text-gray-600">Relax and unwind with smooth ambient and chillout music.</p>
+                            </div>
+                            <div class="bg-gray-100 rounded-lg p-4">
+                                <h4 class="font-semibold">Epic Scores</h4>
+                                <p class="text-sm text-gray-600">Powerful orchestral and cinematic music for big moments.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Community Sidebar -->
+                <div class="space-y-6">
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-xl font-bold mb-4">Community Feed</h3>
+                        <div id="communityFeed" class="space-y-2 text-sm text-gray-600">
+                            <p>New track "Sunset Dreams" uploaded by SynthMaster.</p>
+                            <p>"Epic Scores" collection reached 500 downloads!</p>
+                            <p>BeatCrafter joined the "Hip-Hop Legends" collection.</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-xl font-bold mb-4">Join the Conversation</h3>
+                        <button class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors">
+                            <i class="fas fa-comments mr-2"></i>Visit Forums
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- Scripts for toggling sections, cart, user menu, etc. would be added here -->
+</body>
+</html>
